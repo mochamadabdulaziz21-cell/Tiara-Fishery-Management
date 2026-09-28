@@ -662,7 +662,7 @@ renderActivity=function(){
   if(feedCard && !list.querySelector('[data-bibis-kultur]')){
     const el=document.createElement('div');
     el.className='rec-item'; el.setAttribute('data-bibis-kultur','1');
-    el.innerHTML=`<div class="ico">💧</div><div style="width:100%"><b>Bibis Pakan dengan Kultur</b><small style="display:block;margin-top:4px">Mengikuti sheet <b>Daily_Activity</b>: Bibis Kultur = Pakan × 15%. Rekomendasi pakan hari ini <strong>${F(x.rec)} g</strong> → Bibis Kultur <strong>${F(bibis)} g (basis 15%)</strong>.</small></div>`;
+    el.innerHTML=`<div class="ico">💧</div><div style="width:100%"><b>Bibis Pakan dengan Kultur &amp; Sumber Karbon</b><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:9px"><div style="padding:9px 11px;border-radius:11px;background:#f3f9fd;border:1px solid #deedf6"><small style="display:block;color:#71869a">Pakan Hari Ini</small><strong style="display:block;margin-top:2px;color:#0c4f84;font-size:15px">${F(x.rec)} g</strong></div><div style="padding:9px 11px;border-radius:11px;background:#eefbf5;border:1px solid #d8f0e3"><small style="display:block;color:#71869a">Bibis Kultur · 15%</small><strong style="display:block;margin-top:2px;color:#168553;font-size:15px">${F(bibis)} g</strong></div><div style="padding:9px 11px;border-radius:11px;background:#fff7ed;border:1px solid #f7dfc4"><small style="display:block;color:#71869a">Sumber Karbon · ${source}</small><strong style="display:block;margin-top:2px;color:#c56a09;font-size:15px">${F(carbonToday)} g</strong><small style="display:block;margin-top:2px;color:#8a765f">Unsur C Daily Management</small></div></div></div>`;
     feedCard.insertAdjacentElement('afterend',el);
   }
 
