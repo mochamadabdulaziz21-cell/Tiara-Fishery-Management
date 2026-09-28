@@ -192,6 +192,17 @@ th{background:linear-gradient(180deg,#0c73ac,#075d94)!important}
   #summary .weight-chart-card svg{width:100%!important;max-width:100%!important;height:auto!important;}
 }
 </style>
+
+<style id="bioflok-application-boxes">
+.bioflok-app-times{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+.bioflok-app-time{padding:14px 12px;border-radius:13px;text-align:center;border:1px solid #e1edf5;box-shadow:0 5px 14px rgba(15,70,105,.05)}
+.bioflok-app-time:nth-child(odd){background:#eefbf3}
+.bioflok-app-time:nth-child(even){background:#eef7ff}
+.bioflok-app-time small{display:block;font-size:11px;color:#7890a3;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
+.bioflok-app-time b{display:block;font-size:14px;color:#07558a}
+@media(max-width:560px){.bioflok-app-times{grid-template-columns:1fr 1fr}}
+</style>
+
 </head><body><div id="launchScreen" aria-label="Tiara Fishery sedang memuat"><div class="launch-box"><img class="launch-logo" src="assets/tiara-logo.png" alt="Tiara Fishery"><div class="launch-loader"></div></div></div><div class="app"><aside class="side"><div class="brand"><img src="assets/asset-005.png"></div><h3>Tiara Fishery</h3><div class="nav" id="nav"></div></aside><main class="main"><div class="top"><div><b id="title">Dashboard</b><div class="note" id="subtitle"></div></div><div class="bar"><select id="projectSelect"></select><button class="btn" id="addProjectBtn" type="button">+ Project</button></div></div><div class="content">
 <section id="guide" class="page"><h2>📖 Panduan Penggunaan Aplikasi</h2><div class="card"><h3>Tiara Fishery</h3><p class="note">Panduan singkat penggunaan aplikasi dari pembuatan project sampai melihat hasil budidaya.</p><div class="grid g2" style="margin-top:16px">
 <div class="subcard" onclick="openSubPage('projectGuide','Panduan Membuat Project')" style="cursor:pointer"><div class="subhead">1. Buat Project <span style="margin-left:auto">›</span></div><p>Klik bagian ini untuk membuka panduan profesional penyusunan project budidaya sesuai alur SOP.</p></div>
@@ -834,4 +845,31 @@ window.addEventListener('load',()=>{
  },50);
 });
 </script>
+
+<script id="bioflok-application-boxes-js">
+(function(){
+  function enhanceApplicationTimes(){
+    const root=document.getElementById('actRec');
+    if(!root) return;
+    const nodes=[...root.querySelectorAll('div,p,small,span')];
+    nodes.forEach(el=>{
+      if(el.closest('.bioflok-app-times')) return;
+      const txt=(el.textContent||'').trim();
+      if(!/APLIKASI\s*1/i.test(txt) || !/APLIKASI\s*2/i.test(txt)) return;
+      const t1=(txt.match(/APLIKASI\s*1[\s\S]{0,30}?(\d{1,2}[.:]\d{2}\s*WIB)/i)||[])[1]||'10.00 WIB';
+      const t2=(txt.match(/APLIKASI\s*2[\s\S]{0,30}?(\d{1,2}[.:]\d{2}\s*WIB)/i)||[])[1]||'17.00 WIB';
+      el.innerHTML=`<div class="bioflok-app-times">
+        <div class="bioflok-app-time"><small>APLIKASI 1</small><b>${t1.replace(':','.')}</b></div>
+        <div class="bioflok-app-time"><small>APLIKASI 2</small><b>${t2.replace(':','.')}</b></div>
+      </div>`;
+    });
+  }
+  const old=window.renderActivity;
+  if(typeof old==='function'){
+    window.renderActivity=function(){ const r=old.apply(this,arguments); setTimeout(enhanceApplicationTimes,0); return r; };
+  }
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(enhanceApplicationTimes,150));
+})();
+</script>
+
 </body></html>
