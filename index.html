@@ -397,8 +397,15 @@ let feedBy=[1,2,3].map(ph=>m.filter(x=>phase(x.day)===ph).reduce((a,x)=>a+x.feed
 let feedCostBy=feedBy.map((q,i)=>q*(N(s['feed'+(i+1)+'Price'])/(Math.max(N(s['feed'+(i+1)+'Qty']),1)*1000)));
 let feedCost=feedCostBy.reduce((a,x)=>a+x,0);
 let seed=N(s.seedCount)*N(s.seedPrice);
-let cnQty=(s.cultivationSystem==='Bioflok'?m.reduce((a,x)=>a+x.needC,0):0);
-let cnCost=cnQty*(N(s.sugarPrice)/Math.max(N(s.sugarPack),1));
+let cnWeeks=(s.cultivationSystem==='Bioflok'?cnWeekRows(m):[]);
+let cnCarbonQty=cnWeeks.reduce((a,x)=>a+N(x.sugarCulture)+N(x.sugarCN),0);
+let cnEnzymQty=cnWeeks.reduce((a,x)=>a+N(x.enz),0);
+let cnNitroQty=cnWeeks.reduce((a,x)=>a+N(x.nit),0);
+let cnCarbonCost=cnCarbonQty*(N(s.sugarPrice)/Math.max(N(s.sugarPack),1));
+let cnEnzymCost=cnEnzymQty*(N(s.enzymPrice)/Math.max(N(s.enzymPack),1));
+let cnNitroCost=cnNitroQty*(N(s.nitroPrice)/Math.max(N(s.nitroPack),1));
+let cnQty=cnCarbonQty+cnEnzymQty+cnNitroQty;
+let cnCost=cnCarbonCost+cnEnzymCost+cnNitroCost;
 let elecKwh=N(s.aeratorWatt)/1000*N(s.hours)*N(s.duration);
 let elec=elecKwh*N(s.tariff);
 let labor=N(s.labor)*N(s.laborQty||1);
@@ -441,7 +448,10 @@ let rows=[
 ['Biaya Variabel','Pakan Fase 1',F(feedBy[0]/1000)+' kg',s.feed1Name||'-',feedCostBy[0],'Kas'],
 ['Biaya Variabel','Pakan Fase 2',F(feedBy[1]/1000)+' kg',s.feed2Name||'-',feedCostBy[1],'Kas'],
 ['Biaya Variabel','Pakan Fase 3',F(feedBy[2]/1000)+' kg',s.feed3Name||'-',feedCostBy[2],'Kas'],
-['Biaya Variabel','Bahan C/N',F(cnQty/1000)+' kg',s.cultivationSystem==='Bioflok'?'Bioflok':'Tidak digunakan',cnCost,'Kas'],
+['Biaya Variabel','Sumber Karbon — '+(s.carbonSource||'Gula Pasir'),s.cultivationSystem==='Bioflok'?F(cnCarbonQty)+' g':'0 g',s.cultivationSystem==='Bioflok'?(Rp(N(s.sugarPrice))+'/'+F(N(s.sugarPack))+' '+(s.sugarMeasure||'g')):'Tidak digunakan',cnCarbonCost,'Bahan C/N • Gula Kultur + Unsur C'],
+['Biaya Variabel','Aqua Enzym',s.cultivationSystem==='Bioflok'?F(cnEnzymQty)+' g':'0 g',s.cultivationSystem==='Bioflok'?(Rp(N(s.enzymPrice))+'/'+F(N(s.enzymPack))+' '+(s.enzymMeasure||'g')):'Tidak digunakan',cnEnzymCost,'Bahan C/N • Kultur'],
+['Biaya Variabel','Nitrobacter',s.cultivationSystem==='Bioflok'?F(cnNitroQty)+' g':'0 g',s.cultivationSystem==='Bioflok'?(Rp(N(s.nitroPrice))+'/'+F(N(s.nitroPack))+' '+(s.nitroMeasure||'g')):'Tidak digunakan',cnNitroCost,'Bahan C/N • Kultur'],
+['RINGKASAN','TOTAL BAHAN C/N',s.cultivationSystem==='Bioflok'?F(cnQty)+' g':'0 g',s.cultivationSystem==='Bioflok'?'Bioflok':'Tidak digunakan',cnCost,'Sumber Karbon + Aqua Enzym + Nitrobacter'],
 ['Biaya Variabel','Listrik / Aerasi',F(elecKwh)+' kWh',Rp(s.tariff)+'/kWh',elec,'Kas'],
 ['Biaya Variabel','Obat / Vitamin',F(s.medicineQty||1)+' '+(s.medicineUnit||''),Rp(s.medicine),medicine,'Kas'],
 ['Biaya Variabel','Transportasi',F(s.transportQty||1)+' '+(s.transportUnit||''),Rp(s.transport),transport,'Kas'],
