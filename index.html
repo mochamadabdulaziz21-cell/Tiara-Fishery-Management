@@ -639,6 +639,59 @@ loadSetup=function(){
   applyCarbonSource(true);
 };
 ['sugarPrice','sugarPack'].forEach(id=>document.addEventListener('input',e=>{if(e.target?.id===id)applyCarbonSource(true)}));
+
+// === DAILY ACTIVITY BIOFLOK: mengikuti logic sheet Daily_Activity D2 - Aziz nila ===
+// Bibis Kultur = rekomendasi pakan x 15%.
+// Aplikasi sumber karbon mengikuti kebutuhan C/N pada tanggal aktif.
+// Nama sumber karbon mengikuti pilihan Project: Gula Pasir atau Molase.
+const __renderActivityDailySheet=renderActivity;
+renderActivity=function(){
+  __renderActivityDailySheet();
+  if(!systemIsBioflok() || !$('actRec')) return;
+  const m=model(), date=actDate.value||today(), x=m.find(r=>r.date===date);
+  if(!x) return;
+  const source=S().carbonSource||$('carbonSource')?.value||'Gula Pasir';
+  const bibis=N(x.rec)*0.15;
+  const carbonToday=N(x.needC);
+  const cn=cnWeekRows(m), appToday=cn.find(r=>r.date===date&&r.apk==='Apk'), cultureTomorrow=cn.find(r=>r.date===add(date,1));
+  const list=$('actRec').querySelector('.rec-list');
+  if(!list) return;
+
+  // Tambahkan Bibis Kultur tepat setelah kartu Pakan.
+  const feedCard=list.querySelector('.feed-detail');
+  if(feedCard && !list.querySelector('[data-bibis-kultur]')){
+    const el=document.createElement('div');
+    el.className='rec-item'; el.setAttribute('data-bibis-kultur','1');
+    el.innerHTML=`<div class="ico">💧</div><div style="width:100%"><b>Bibis Pakan dengan Kultur</b><small style="display:block;margin-top:4px">Mengikuti sheet <b>Daily_Activity</b>: Bibis Kultur = Pakan × 15%. Rekomendasi pakan hari ini <strong>${F(x.rec)} g</strong> → Bibis Kultur <strong>${F(bibis)} g (basis 15%)</strong>.</small></div>`;
+    feedCard.insertAdjacentElement('afterend',el);
+  }
+
+  // Ganti istilah Gula menjadi sumber karbon yang dipilih dan gunakan kebutuhan C/N tanggal aktif.
+  [...list.querySelectorAll('.rec-item')].forEach(el=>{
+    let html=el.innerHTML;
+    if((el.textContent||'').includes('Aplikasi Kolam')){
+      html=html.replace(/Gula C\/N <strong>[\s\S]*?<\/strong>/,`${source} C/N <strong>${F(carbonToday)} g</strong>`)
+               .replace(/Gula kultur/g,`${source} kultur`);
+      el.innerHTML=html;
+    }
+    if((el.textContent||'').includes('Pembuatan Kultur Ember')){
+      html=html.replace(/Gula Pasir/g,source).replace(/>GULA</g,`>${source.toUpperCase()}<`);
+      el.innerHTML=html;
+    }
+  });
+};
+
+// Pastikan pilihan sumber karbon ikut tersimpan di Project.
+const __saveSetupCarbonSource=saveSetup;
+saveSetup=function(){
+  __saveSetupCarbonSource();
+  if(db.active && db.projects[db.active]){
+    db.projects[db.active].setup=db.projects[db.active].setup||{};
+    db.projects[db.active].setup.carbonSource=$('carbonSource')?.value||'Gula Pasir';
+    save();
+  }
+};
+
 init();
 </script>
 <script>
