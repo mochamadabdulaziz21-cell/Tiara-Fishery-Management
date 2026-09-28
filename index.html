@@ -179,7 +179,20 @@ th{background:linear-gradient(180deg,#0c73ac,#075d94)!important}
 @keyframes tiaraSpin{to{transform:rotate(360deg)}}
 @media(min-width:901px){#launchScreen .launch-box{width:min(38vw,430px)}}
 </style>
-<style id="weight-chart-final">.weight-chart-card{overflow:hidden}.weight-chart-card svg text{font-family:Inter,Segoe UI,Arial,sans-serif}@media(max-width:560px){.weight-chart-card{padding:14px!important}.weight-chart-card .summary-title{font-size:18px!important}}@media print{.weight-chart-card{break-inside:avoid;page-break-inside:avoid}.weight-chart-card svg{min-width:0!important;width:100%!important}}</style></head><body><div id="launchScreen" aria-label="Tiara Fishery sedang memuat"><div class="launch-box"><img class="launch-logo" src="assets/tiara-logo.png" alt="Tiara Fishery"><div class="launch-loader"></div></div></div><div class="app"><aside class="side"><div class="brand"><img src="assets/asset-005.png"></div><h3>Tiara Fishery</h3><div class="nav" id="nav"></div></aside><main class="main"><div class="top"><div><b id="title">Dashboard</b><div class="note" id="subtitle"></div></div><div class="bar"><select id="projectSelect"></select><button class="btn" id="addProjectBtn" type="button">+ Project</button></div></div><div class="content">
+<style id="weight-chart-final">.weight-chart-card{overflow:hidden}.weight-chart-card svg text{font-family:Inter,Segoe UI,Arial,sans-serif}@media(max-width:560px){.weight-chart-card{padding:14px!important}.weight-chart-card .summary-title{font-size:18px!important}}@media print{.weight-chart-card{break-inside:avoid;page-break-inside:avoid}.weight-chart-card svg{min-width:0!important;width:100%!important}}</style>
+<style id="mobile-pdf-lightweight-fix">
+/* PDF mobile: pertahankan layout A4 penuh tetapi hindari embedding foto/background besar agar file PDF lebih ringan. */
+@media print{
+  body{background:#fff!important;}
+  #summary{width:190mm!important;max-width:190mm!important;margin:0 auto!important;}
+  #summaryBody{width:190mm!important;max-width:190mm!important;}
+  #summary .report-cover{background:#0b5f91!important;min-height:52mm!important;}
+  #summary .report-photo{display:none!important;}
+  #summary .grid.g2.report-section:has(.report-photo){grid-template-columns:1fr!important;}
+  #summary .weight-chart-card svg{width:100%!important;max-width:100%!important;height:auto!important;}
+}
+</style>
+</head><body><div id="launchScreen" aria-label="Tiara Fishery sedang memuat"><div class="launch-box"><img class="launch-logo" src="assets/tiara-logo.png" alt="Tiara Fishery"><div class="launch-loader"></div></div></div><div class="app"><aside class="side"><div class="brand"><img src="assets/asset-005.png"></div><h3>Tiara Fishery</h3><div class="nav" id="nav"></div></aside><main class="main"><div class="top"><div><b id="title">Dashboard</b><div class="note" id="subtitle"></div></div><div class="bar"><select id="projectSelect"></select><button class="btn" id="addProjectBtn" type="button">+ Project</button></div></div><div class="content">
 <section id="guide" class="page"><h2>📖 Panduan Penggunaan Aplikasi</h2><div class="card"><h3>Tiara Fishery</h3><p class="note">Panduan singkat penggunaan aplikasi dari pembuatan project sampai melihat hasil budidaya.</p><div class="grid g2" style="margin-top:16px">
 <div class="subcard" onclick="openSubPage('projectGuide','Panduan Membuat Project')" style="cursor:pointer"><div class="subhead">1. Buat Project <span style="margin-left:auto">›</span></div><p>Klik bagian ini untuk membuka panduan profesional penyusunan project budidaya sesuai alur SOP.</p></div>
 <div class="subcard"><div class="subhead">2. Dashboard</div><p>Dashboard menampilkan ringkasan project aktif, termasuk populasi, biomassa, pakan, FCR, dan indikator utama budidaya berdasarkan data project.</p></div>
@@ -241,8 +254,10 @@ function model(){let s=S();if(!s.startDate||!N(s.seedCount))return[];let out=[],
 // Kurva bobot otomatis: dari bobot tebar menuju target panen. Target FCR dipakai sebagai acuan efisiensi pakan,
 // sementara titik sampling aktual di Daily Activity menjadi anchor baru tanpa mengubah target akhir.
 let progress=dur?clamp((day-lastActualDay)/Math.max(dur-lastActualDay,1),0,1):1;let smooth=progress*progress*(3-2*progress);let weight=lastActualWeight+(targetW-lastActualWeight)*smooth;if(a.weight!==undefined&&a.weight!==''){weight=N(a.weight);lastActualDay=day;lastActualWeight=weight}
-let death=day===0?pop*.05:(day===1?15:0);if(a.death!==undefined&&a.death!=='')death=N(a.death);let biomass=pop*weight,feedRate=fr(Math.max(day,1)),rec=biomass*feedRate*.90,feed=(a.feed!==undefined&&a.feed!=='')?N(a.feed):rec,absorb=feed*.5,ph=phase(day),protein=(N(s['feed'+ph+'Protein'])||28)/100,water=(N(s['feed'+ph+'Water'])||12)/100,C=feed*water*.70*.5,Nit=feed*water*.70*protein/6.25,ratio=Nit?C/Nit:0,target=cnTarget(day),needC=Math.max(0,(target*Nit-C)/.5);out.push({day,week:Math.floor(Math.max(day-1,0)/8)+1,date,feedName:feedName(day,s),death,pop,weight,biomass,fr:feedRate,rec,feed,absorb,C,Nit,ratio,target,needC:(a.cn!==undefined&&a.cn!==''?N(a.cn):needC),actual:!!actual[date]});prevPop=pop;prevDeath=death;}
-/* FINAL FCR reconciliation: total pakan siklus mengikuti pertambahan biomassa × target FCR.
+let death=day===0?pop*.05:(day===1?15:0);if(a.death!==undefined&&a.death!=='')death=N(a.death);let biomass=pop*weight,feedRate=fr(Math.max(day,1)),rec=biomass*feedRate,feed=(a.feed!==undefined&&a.feed!=='')?N(a.feed):rec,absorb=feed*.5,ph=phase(day),protein=(N(s['feed'+ph+'Protein'])||28)/100,water=(N(s['feed'+ph+'Water'])||12)/100,C=feed*water*.70*.5,Nit=feed*water*.70*protein/6.25,ratio=Nit?C/Nit:0,target=cnTarget(day),needC=Math.max(0,(target*Nit-C)/.5);out.push({day,week:Math.floor(Math.max(day-1,0)/8)+1,date,feedName:feedName(day,s),death,pop,weight,biomass,fr:feedRate,rec,feed,absorb,C,Nit,ratio,target,needC:(a.cn!==undefined&&a.cn!==''?N(a.cn):needC),actual:!!actual[date]});prevPop=pop;prevDeath=death;}
+/* FINAL FCR + Feeding Rate: rekomendasi pakan = biomassa total (g) × FR efektif (%).
+   FR efektif tetap disesuaikan proporsional agar total pakan siklus memenuhi target FCR.
+   FINAL FCR reconciliation: total pakan siklus mengikuti pertambahan biomassa × target FCR.
    Input pakan aktual dari Daily Activity dipertahankan; sisa kebutuhan dibagi proporsional mengikuti pola FR. */
 if(out.length>1){
   let initialBio=N(out[0].biomass), finalBio=N(out[out.length-1].biomass), targetFcr=N(s.targetFcr)||1.3;
@@ -250,7 +265,7 @@ if(out.length>1){
   let actualFeed=0, rawPlanned=0;
   out.forEach((r,i)=>{if(i===0)return;let a=actual[r.date]||{},has=a.feed!==undefined&&a.feed!=='';if(has)actualFeed+=N(a.feed);else rawPlanned+=N(r.rec);});
   let remaining=Math.max(0,targetFeed-actualFeed), scale=rawPlanned?remaining/rawPlanned:0;
-  out.forEach((r,i)=>{if(i===0){r.feed=0;r.rec=0;return;}let a=actual[r.date]||{},has=a.feed!==undefined&&a.feed!=='';if(!has)r.rec=N(r.rec)*scale;r.feed=has?N(a.feed):r.rec;r.fr=r.biomass?r.rec/r.biomass*100:0;r.absorb=r.feed*.5;let ph=phase(r.day),protein=(N(s['feed'+ph+'Protein'])||28)/100,water=(N(s['feed'+ph+'Water'])||12)/100,dry=1-water;r.C=r.feed*dry*.70*.5;r.Nit=r.feed*dry*.70*protein/6.25;r.ratio=r.Nit?r.C/r.Nit:0;r.needC=(a.cn!==undefined&&a.cn!=='')?N(a.cn):Math.max(0,r.target*r.Nit-r.C)/.5;});
+  out.forEach((r,i)=>{if(i===0){r.feed=0;r.rec=0;return;}let a=actual[r.date]||{},has=a.feed!==undefined&&a.feed!=='';if(!has)r.rec=N(r.rec)*scale;r.feed=has?N(a.feed):r.rec;r.fr=r.biomass?r.rec/r.biomass:0;r.absorb=r.feed*.5;let ph=phase(r.day),protein=(N(s['feed'+ph+'Protein'])||28)/100,water=(N(s['feed'+ph+'Water'])||12)/100,dry=1-water;r.C=r.feed*dry*.70*.5;r.Nit=r.feed*dry*.70*protein/6.25;r.ratio=r.Nit?r.C/r.Nit:0;r.needC=(a.cn!==undefined&&a.cn!=='')?N(a.cn):Math.max(0,r.target*r.Nit-r.C)/.5;});
 }
 return out}
 function cnWeekRows(m){let weeks=[...new Set(m.filter(x=>x.day>0).map(x=>x.week))];return weeks.map(w=>{let rows=m.filter(x=>x.week===w&&x.day>0),x=rows[0],feed=rows.reduce((a,r)=>a+r.feed,0),needC=rows.reduce((a,r)=>a+r.needC,0),ss=S(),height=w<=2?30:100,totalAir=N(ss.volume)*(height/100),apk=(w===1||N(x.feed)===0)?'Apk':'-',airCulture=needC>0?(apk==='Apk'?totalAir+(feed*.15/100):(feed*.15/100)):(feed*.15/100),sugarCulture=airCulture*10,enz=airCulture*(w<=4?2:.5),nit=airCulture*(w<=3?0:.5);return {week:w,date:x.date,apk,height,totalAir,feed,airCulture,sugarCulture,sugarCN:needC,enz,nit,target:x.target}})}
