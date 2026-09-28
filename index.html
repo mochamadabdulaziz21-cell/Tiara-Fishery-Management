@@ -228,7 +228,7 @@ th{background:linear-gradient(180deg,#0c73ac,#075d94)!important}
 <section id="daily" class="page"><h2>📊 Daily Management</h2><p class="note">Tabel ini otomatis sejak DOC 0 sampai lama budidaya. Jika Aktual Hari Ini diisi dan disimpan di Daily Activity, data tanggal tersebut otomatis masuk ke Daily Management dan memperbarui perhitungan terkait. Jika tidak ada input aktual, Daily Management tetap memakai data rencana normal. Tombol Edit membuka tanggal tersebut di Daily Activity.</p><div class="table"><table><thead><tr><th>Day</th><th>Week</th><th>Date</th><th>Pelet</th><th>Kematian</th><th>Populasi</th><th>Berat/ekor g</th><th>Total Berat kg</th><th>FR</th><th>Rekom. Pakan g</th><th>Penyerapan g</th><th>Unsur C g</th><th>Target C:N</th><th>C:N Pakan</th><th>Edit</th></tr></thead><tbody id="dailyRows"></tbody></table></div></section>
 <section id="activity" class="page"><div class="bar"><h2>🗓️ Daily Activity</h2><input type="date" id="actDate"><button class="btn" type="button" onclick="actDate.value=today();renderActivity()">Hari Ini</button><button class="btn g" onclick="saveActivity()">Simpan Aktual</button></div><div class="grid g4" id="actKpi"></div><div class="activity-layout" style="margin-top:18px"><div class="card actual-card"><h3>📝 Aktual Hari Ini</h3><div class="form" style="grid-template-columns:1fr 1fr" id="actInputs"></div></div><div class="card recommendation-card"><div id="actRec"></div></div></div></section>
 <section id="cn" class="page"><h2>🧪 Aplikasi C/N</h2><div class="hint" style="margin-bottom:12px"><b>Logic mengikuti sheet “Aplikasi CN” pada D2 - Aziz nila:</b> data diringkas per Week, ketinggian air Week 1–2 = 30% dan Week berikutnya = 100%, Air Kultur = Total Air + 15% pakan (saat aplikasi & kebutuhan C &gt; 0), Gula Kultur = Air Kultur × 10, Gula C/N = kebutuhan unsur C.</div><div class="table"><table><thead><tr><th>Apk</th><th>Week</th><th>Tanggal</th><th>Ketinggian Air %</th><th>Total Air m³</th><th>Total Pakan g</th><th>Air Kultur L</th><th>Gula Kultur g</th><th>Gula C/N g</th><th>Aqua Enzym g</th><th>Nitrobacter g</th></tr></thead><tbody id="cnRows"></tbody></table></div></section>
-<section id="finance" class="page"><h2>💰 Finance</h2><div class="grid g4" id="finKpi"></div><div class="table" style="margin-top:14px"><table class="finance"><thead><tr><th>Akun</th><th>Qty</th><th>Basis Harga</th><th>Total</th><th>Keterangan</th></tr></thead><tbody id="finRows"></tbody></table></div></section>
+<section id="finance" class="page"><h2>💰 Finance & Margin</h2><p class="note">Ringkasan modal kerja, biaya produksi, HPP, BEP, laba, margin, R/C Ratio dan ROI per siklus. Proyeksi mengikuti data Project aktif.</p><div class="grid g4" id="finKpi"></div><div class="table" style="margin-top:14px"><table class="finance"><thead><tr><th>Akun</th><th>Qty</th><th>Basis Harga</th><th>Total</th><th>Keterangan</th></tr></thead><tbody id="finRows"></tbody></table></div></section>
 <section id="summary" class="page"><div id="summaryBody"></div><div class="report-actions" style="margin-top:16px;margin-bottom:0"><button class="btn" type="button" onclick="printSummary()">⬇️ Cetak / Simpan PDF</button></div></section>
 </div></main></div>
 <script>
@@ -389,7 +389,90 @@ function editDaily(date){
 function renderActivity(){let m=model();if(!m.length){actKpi.innerHTML='<div class="card">Project belum disimpan.</div>';return}let date=actDate.value||today(),x=m.find(r=>r.date===date);if(!x){actKpi.innerHTML='<div class="card" style="grid-column:1/-1"><b>Tanggal di luar periode budidaya.</b><div class="note">Pilih tanggal antara '+S().startDate+' sampai '+add(S().startDate,N(S().duration))+'.</div></div>';actInputs.innerHTML='';actRec.innerHTML='';return}let a=(P().actual||{})[date]||{},usedFeed=m.filter(r=>r.date<=date).reduce((q,r)=>q+r.feed,0),futureFeed=m.filter(r=>r.date>date).reduce((q,r)=>q+r.feed,0),initial=m[0],sr=initial.pop?x.pop/initial.pop*100:0,fcr=actualFCR(m,m.findIndex(r=>r.date===date));actKpi.innerHTML=[['DOC',x.day,'blue'],['Week',x.week,'cyan'],['Jumlah Ikan',F(x.pop)+' ekor','green'],['Bio Massa',F(x.biomass/1000)+' kg','orange'],['Bobot Aktual',F(x.weight)+' g','purple'],['SR',F(sr)+'%','red'],['Feeding Rate',F(x.fr*100)+'%','blue'],['FCR Aktual',F(fcr),'orange'],['/Kg',F(1000/x.weight)+' ekor','cyan']].map(z=>`<div class="kpi ${z[2]}">${z[0]}<b>${z[1]}</b></div>`).join('');actInputs.innerHTML=inp('aDeath','Kematian Aktual','number',a.death??'')+inp('aWeight','Bobot Sampling g','number',a.weight??'')+inp('aFeed','Pakan Aktual g','number',a.feed??'')+inp('aCn','Unsur C Aktual g','number',a.cn??'')+inp('aNote','Catatan','text',a.note??'');let cn=cnWeekRows(m),appToday=cn.find(r=>r.date===date&&r.apk==='Apk'),cultureTomorrow=cn.find(r=>r.date===add(date,1));actRec.parentElement.classList.add('summary-card');actRec.innerHTML=`<div class="summary-head"><div class="summary-icon">✨</div><div><div class="summary-title">Daily Activity — mengikuti Daily Management</div><div class="summary-sub">${date} • DOC ${x.day} • Week ${x.week}</div></div></div><div class="rec-list"><div class="rec-item feed-detail"><div class="ico">🐟</div><div style="width:100%"><b>Pakan • ${x.feedName}</b><small style="display:block;margin-top:4px">Rekomendasi Daily Management: <strong>${F(x.rec)} g</strong> • FR ${F(x.fr*100)}% • penyerapan 50% = ${F(x.rec*.5)} g.</small><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px"><div style="padding:10px;border-radius:12px;background:#eef7ff;text-align:center"><small>PAGI 08–09 • 30%</small><b style="display:block">${F(x.rec*.30)} g</b></div><div style="padding:10px;border-radius:12px;background:#f0fdf4;text-align:center"><small>SIANG 11–12 • 30%</small><b style="display:block">${F(x.rec*.30)} g</b></div><div style="padding:10px;border-radius:12px;background:#fff7ed;text-align:center"><small>SORE 15–16 • 40%</small><b style="display:block">${F(x.rec*.40)} g</b></div></div></div></div><div class="rec-item"><div class="ico">🧪</div><div style="width:100%"><b>Aplikasi Kolam Hari Ini • Week ${appToday?appToday.week:x.week}</b>${appToday?`<small style="display:block;margin-top:4px">Jadwal aplikasi: <strong>10.00 & 17.00 WIB</strong> • Air kultur <strong>${F(appToday.airCulture)} L</strong> • Gula kultur <strong>${F(appToday.sugarCulture)} g</strong> • Gula C/N <strong>${F(appToday.sugarCN)} g</strong> • Aqua Enzym <strong>${F(appToday.enz)} g</strong> • Nitrobacter <strong>${F(appToday.nit)} g</strong>.</small><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px"><div style="padding:10px;border-radius:12px;background:#f0fdf4;text-align:center"><small>APLIKASI 1</small><b style="display:block">10.00 WIB</b></div><div style="padding:10px;border-radius:12px;background:#eef7ff;text-align:center"><small>APLIKASI 2</small><b style="display:block">17.00 WIB</b></div></div>`:`<small style="display:block;margin-top:4px">Tidak ada jadwal aplikasi kolam hari ini berdasarkan sheet Aplikasi CN.</small>`}</div></div><div class="rec-item"><div class="ico">🪣</div><div style="width:100%"><b>Pembuatan Kultur Ember • 07.00 WIB</b>${cultureTomorrow?`<small style="display:block;margin-top:4px">Project untuk aplikasi <strong>besok (${cultureTomorrow.date})</strong>: Air kultur <strong>${F(cultureTomorrow.airCulture)} L</strong> • Gula Pasir <strong>${F(cultureTomorrow.sugarCulture)} g</strong> • Aqua Enzym <strong>${F(cultureTomorrow.enz)} g</strong> • Nitrobacter <strong>${F(cultureTomorrow.nit)} g</strong>.</small><div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px"><div style="padding:10px;border-radius:12px;background:#eef7ff;text-align:center"><small>AIR</small><b style="display:block">${F(cultureTomorrow.airCulture)} L</b></div><div style="padding:10px;border-radius:12px;background:#fff7ed;text-align:center"><small>GULA</small><b style="display:block">${F(cultureTomorrow.sugarCulture)} g</b></div><div style="padding:10px;border-radius:12px;background:#f0fdf4;text-align:center"><small>AQUA ENZYM</small><b style="display:block">${F(cultureTomorrow.enz)} g</b></div><div style="padding:10px;border-radius:12px;background:#faf5ff;text-align:center"><small>NITROBACTER</small><b style="display:block">${F(cultureTomorrow.nit)} g</b></div></div>`:`<small style="display:block;margin-top:4px">Tidak ada kultur untuk jadwal aplikasi besok.</small>`}</div></div><div class="rec-item"><div class="ico">📈</div><div><b>Monitoring</b><small>Populasi ${F(x.pop)} ekor • bobot ${F(x.weight)} g/ekor • biomassa ${F(x.biomass/1000)} kg • konsumsi pakan s.d. hari ini ${F(usedFeed/1000)} kg • kebutuhan pakan sisa ${F(futureFeed/1000)} kg.</small></div></div></div>`}
 function saveActivity(){if(!S().startDate)return;P().actual=P().actual||{};P().actual[actDate.value]={death:aDeath.value,weight:aWeight.value,feed:aFeed.value,cn:aCn.value,note:aNote.value};save();refreshAll();go('activity')}
 function renderCN(){let m=model();if(!m.length){cnRows.innerHTML='';return}cnRows.innerHTML=cnWeekRows(m).map(r=>`<tr><td><b>${r.apk}</b></td><td>${r.week}</td><td>${r.date}</td><td>${F(r.height)}</td><td>${F(r.totalAir)}</td><td>${F(r.feed)}</td><td>${F(r.airCulture)}</td><td>${F(r.sugarCulture)}</td><td>${F(r.sugarCN)}</td><td>${F(r.enz)}</td><td>${F(r.nit)}</td></tr>`).join('')}
-function renderFinance(){let m=model(),s=S();if(!m.length){finKpi.innerHTML='<div class="card">Project belum disimpan.</div>';finRows.innerHTML='';return}let last=m[m.length-1],feedBy=[1,2,3].map(ph=>m.filter(x=>phase(x.day)===ph).reduce((a,x)=>a+x.feed,0)),feedCost=feedBy.reduce((a,q,i)=>a+q*(N(s['feed'+(i+1)+'Price'])/(Math.max(N(s['feed'+(i+1)+'Qty']),1)*1000)),0),seed=N(s.seedCount)*N(s.seedPrice),cnCost=(s.cultivationSystem==='Bioflok'?m.reduce((a,x)=>a+x.needC,0)*(N(s.sugarPrice)/Math.max(N(s.sugarPack),1)):0),elec=N(s.aeratorWatt)/1000*N(s.hours)*N(s.duration)*N(s.tariff),direct=seed+feedCost+cnCost,opex=elec+N(s.labor)*N(s.laborQty||1)+N(s.medicine)*N(s.medicineQty||1)+N(s.transport)*N(s.transportQty||1)+N(s.depreciation)*N(s.depreciationQty||1)+N(s.misc)*N(s.miscQty||1),rev=last.biomass/1000*N(s.sellPrice),gross=rev-direct,net=gross-opex,margin=rev?net/rev*100:0,bep=last.biomass? (direct+opex)/(last.biomass/1000):0;finKpi.innerHTML=[['Pendapatan',Rp(rev),'blue'],['Laba Kotor',Rp(gross),'green'],['Laba Bersih',Rp(net),net>=0?'green':'red'],['Net Margin',F(margin)+'%',margin>=0?'purple':'red']].map(x=>`<div class="kpi ${x[2]}">${x[0]}<b>${x[1]}</b></div>`).join('');let rows=[['Bibit Ikan',F(s.seedCount)+' ekor',Rp(s.seedPrice),seed,'HPP'],['Pakan Fase 1',F(feedBy[0]/1000)+' kg',Rp(N(s.feed1Price)/Math.max(N(s.feed1Qty),1))+' /'+(s.feed1Unit||'kg'),feedBy[0]*N(s.feed1Price)/(Math.max(N(s.feed1Qty),1)*1000),'HPP'],['Pakan Fase 2',F(feedBy[1]/1000)+' kg',Rp(N(s.feed2Price)/Math.max(N(s.feed2Qty),1))+' /'+(s.feed2Unit||'kg'),feedBy[1]*N(s.feed2Price)/(Math.max(N(s.feed2Qty),1)*1000),'HPP'],['Pakan Fase 3',F(feedBy[2]/1000)+' kg',Rp(N(s.feed3Price)/Math.max(N(s.feed3Qty),1))+' /'+(s.feed3Unit||'kg'),feedBy[2]*N(s.feed3Price)/(Math.max(N(s.feed3Qty),1)*1000),'HPP'],['Bahan C/N',F(m.reduce((a,x)=>a+x.needC,0)/1000)+' kg','sesuai project',cnCost,'HPP'],['Listrik',F(N(s.aeratorWatt)/1000*N(s.hours)*N(s.duration))+' kWh',Rp(s.tariff)+'/kWh',elec,'OPEX'],['Tenaga Kerja',F(s.laborQty||1)+' '+(s.laborUnit||''),Rp(s.labor),N(s.labor)*N(s.laborQty||1),'OPEX'],['Obat/Vitamin',F(s.medicineQty||1)+' '+(s.medicineUnit||''),Rp(s.medicine),N(s.medicine)*N(s.medicineQty||1),'OPEX'],['Transportasi',F(s.transportQty||1)+' '+(s.transportUnit||''),Rp(s.transport),N(s.transport)*N(s.transportQty||1),'OPEX'],['Penyusutan',F(s.depreciationQty||1)+' '+(s.depreciationUnit||''),Rp(s.depreciation),N(s.depreciation)*N(s.depreciationQty||1),'OPEX'],['Lain-lain',F(s.miscQty||1)+' '+(s.miscUnit||''),Rp(s.misc),N(s.misc)*N(s.miscQty||1),'OPEX'],['TOTAL BIAYA','','',direct+opex,''],['BEP Harga / kg',F(last.biomass/1000)+' kg','',bep,''],['LABA BERSIH','','',net,'']];finRows.innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td class="${r[3]<0?'neg':''}">${Rp(r[3])}</td><td>${r[4]}</td></tr>`).join('')}
+function renderFinance(){
+let m=model(),s=S();
+if(!m.length){finKpi.innerHTML='<div class="card">Project belum disimpan.</div>';finRows.innerHTML='';return}
+let last=m[m.length-1];
+let feedBy=[1,2,3].map(ph=>m.filter(x=>phase(x.day)===ph).reduce((a,x)=>a+x.feed,0));
+let feedCostBy=feedBy.map((q,i)=>q*(N(s['feed'+(i+1)+'Price'])/(Math.max(N(s['feed'+(i+1)+'Qty']),1)*1000)));
+let feedCost=feedCostBy.reduce((a,x)=>a+x,0);
+let seed=N(s.seedCount)*N(s.seedPrice);
+let cnQty=(s.cultivationSystem==='Bioflok'?m.reduce((a,x)=>a+x.needC,0):0);
+let cnCost=cnQty*(N(s.sugarPrice)/Math.max(N(s.sugarPack),1));
+let elecKwh=N(s.aeratorWatt)/1000*N(s.hours)*N(s.duration);
+let elec=elecKwh*N(s.tariff);
+let labor=N(s.labor)*N(s.laborQty||1);
+let medicine=N(s.medicine)*N(s.medicineQty||1);
+let transport=N(s.transport)*N(s.transportQty||1);
+let depreciation=N(s.depreciation)*N(s.depreciationQty||1);
+let misc=N(s.misc)*N(s.miscQty||1);
+
+let variableCost=seed+feedCost+cnCost+elec+medicine+transport+misc;
+let fixedCost=labor+depreciation;
+let cashCost=variableCost+labor; // modal kerja kas: tidak memasukkan penyusutan non-kas
+let totalCost=variableCost+fixedCost;
+let harvestKg=last.biomass/1000;
+let rev=harvestKg*N(s.sellPrice);
+let net=rev-totalCost;
+let margin=rev?net/rev*100:0;
+let roiCash=cashCost?net/cashCost*100:0;
+let rcRatio=totalCost?rev/totalCost:0;
+let hppKg=harvestKg?totalCost/harvestKg:0;
+let bepPrice=harvestKg?totalCost/harvestKg:0;
+let bepProduction=N(s.sellPrice)>0?totalCost/N(s.sellPrice):0;
+let contribution=rev-variableCost;
+let contributionMargin=rev?contribution/rev*100:0;
+let safetyKg=Math.max(0,harvestKg-bepProduction);
+let safetyPct=harvestKg?safetyKg/harvestKg*100:0;
+
+finKpi.innerHTML=[
+['Modal Kerja Siklus',Rp(cashCost),'orange'],
+['Total Biaya Akuntansi',Rp(totalCost),'red'],
+['Pendapatan Proyeksi',Rp(rev),'blue'],
+['Laba Bersih Proyeksi',Rp(net),net>=0?'green':'red'],
+['HPP / kg',Rp(hppKg),'cyan'],
+['Net Margin',F(margin)+'%',margin>=0?'purple':'red'],
+['R/C Ratio',F(rcRatio),rcRatio>=1?'green':'red'],
+['ROI Modal Kerja',F(roiCash)+'%',roiCash>=0?'green':'red']
+].map(x=>`<div class="kpi ${x[2]}">${x[0]}<b>${x[1]}</b></div>`).join('');
+
+let rows=[
+['Biaya Variabel','Bibit Ikan',F(s.seedCount)+' ekor',Rp(s.seedPrice)+'/ekor',seed,'Kas'],
+['Biaya Variabel','Pakan Fase 1',F(feedBy[0]/1000)+' kg',s.feed1Name||'-',feedCostBy[0],'Kas'],
+['Biaya Variabel','Pakan Fase 2',F(feedBy[1]/1000)+' kg',s.feed2Name||'-',feedCostBy[1],'Kas'],
+['Biaya Variabel','Pakan Fase 3',F(feedBy[2]/1000)+' kg',s.feed3Name||'-',feedCostBy[2],'Kas'],
+['Biaya Variabel','Bahan C/N',F(cnQty/1000)+' kg',s.cultivationSystem==='Bioflok'?'Bioflok':'Tidak digunakan',cnCost,'Kas'],
+['Biaya Variabel','Listrik / Aerasi',F(elecKwh)+' kWh',Rp(s.tariff)+'/kWh',elec,'Kas'],
+['Biaya Variabel','Obat / Vitamin',F(s.medicineQty||1)+' '+(s.medicineUnit||''),Rp(s.medicine),medicine,'Kas'],
+['Biaya Variabel','Transportasi',F(s.transportQty||1)+' '+(s.transportUnit||''),Rp(s.transport),transport,'Kas'],
+['Biaya Variabel','Biaya Lain',F(s.miscQty||1)+' '+(s.miscUnit||''),Rp(s.misc),misc,'Kas'],
+['Biaya Tetap','Tenaga Kerja',F(s.laborQty||1)+' '+(s.laborUnit||''),Rp(s.labor),labor,'Kas'],
+['Biaya Tetap','Penyusutan Peralatan',F(s.depreciationQty||1)+' '+(s.depreciationUnit||''),Rp(s.depreciation),depreciation,'Non-kas'],
+['RINGKASAN','TOTAL BIAYA VARIABEL','','',variableCost,''],
+['RINGKASAN','TOTAL BIAYA TETAP','','',fixedCost,''],
+['RINGKASAN','MODAL KERJA / KEBUTUHAN KAS SIKLUS','','',cashCost,'Tidak termasuk penyusutan'],
+['RINGKASAN','TOTAL BIAYA AKUNTANSI','','',totalCost,'Termasuk penyusutan'],
+['HASIL','PENDAPATAN PROYEKSI',F(harvestKg)+' kg',Rp(s.sellPrice)+'/kg',rev,''],
+['HASIL','LABA BERSIH PROYEKSI','','',net,''],
+['ANALISIS','HPP / BIAYA PRODUKSI PER KG',F(harvestKg)+' kg','',hppKg,'Rp/kg'],
+['ANALISIS','BEP HARGA JUAL',F(harvestKg)+' kg','',bepPrice,'Rp/kg'],
+['ANALISIS','BEP PRODUKSI',F(bepProduction)+' kg',Rp(s.sellPrice)+'/kg',0,'Minimal kg terjual'],
+['ANALISIS','CONTRIBUTION MARGIN','','',contribution,'Margin kontribusi '+F(contributionMargin)+'%'],
+['ANALISIS','MARGIN OF SAFETY',F(safetyKg)+' kg','',0,F(safetyPct)+'% di atas BEP']
+];
+
+finRows.innerHTML=rows.map(r=>{
+  let display=(r[0]==='ANALISIS' && (r[1]==='BEP PRODUKSI'||r[1]==='MARGIN OF SAFETY')) ? '-' : Rp(r[4]);
+  return `<tr><td><b>${r[1]}</b><br><small>${r[0]}</small></td><td>${r[2]}</td><td>${r[3]}</td><td class="${r[4]<0?'neg':''}">${display}</td><td>${r[5]}</td></tr>`;
+}).join('');
+
+finRows.innerHTML += `<tr><td colspan="5" style="text-align:left;background:#f5f9fc;color:#496779">
+<b>Catatan akuntansi:</b> Modal Kerja Siklus = kebutuhan kas untuk menjalankan satu siklus dan tidak memasukkan penyusutan karena penyusutan adalah biaya non-kas. 
+Total Biaya Akuntansi = seluruh biaya produksi termasuk penyusutan. HPP/kg = Total Biaya Akuntansi ÷ proyeksi biomassa panen. 
+BEP Harga = harga minimum/kg agar total biaya tertutup. BEP Produksi = minimal kg yang harus terjual pada harga jual yang dimasukkan. 
+R/C Ratio = Pendapatan ÷ Total Biaya; angka 1 berarti impas.
+</td></tr>`;
+}
 function renderSummary(){
 let m=model(),s=S();if(!m.length){summaryBody.innerHTML='<div class="card">Project belum disimpan.</div>';return}
 let first=m[0],last=m[m.length-1],feed=m.reduce((a,x)=>a+x.feed,0)/1000,deaths=m.reduce((a,x)=>a+x.death,0),sr=first.pop?last.pop/first.pop*100:0,adg=(last.weight-first.weight)/Math.max(last.day,1),actualCount=Object.keys(P().actual||{}).length;
